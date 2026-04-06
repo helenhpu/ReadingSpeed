@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReadSpeed — Test Your Reading Speed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a1a;
+    --ink-soft: #555;
+    --ink-faint: #999;
+    --paper: #faf9f6;
+    --paper-warm: #f3f1eb;
+    --paper-card: #ffffff;
+    --accent: #c0392b;
+    --accent-soft: #e8d5d3;
+    --border: rgba(0,0,0,0.1);
+    --radius: 4px;
+    --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    background: var(--paper-card);
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  header span {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  main {
+    flex: 1;
+    max-width: 820px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+  }
+
+  /* === SCREENS === */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* === INTRO === */
+  .intro-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+  }
+
+  .intro-sub {
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+    line-height: 1.7;
+    max-width: 520px;
+    margin-bottom: 2.5rem;
+  }
+
+  .passage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .passage-card {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+    position: relative;
+  }
+
+  .passage-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+  }
+
+  .passage-card.selected {
+    border-color: var(--accent);
+    background: #fff8f7;
+  }
+
+  .passage-card .check {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .passage-card.selected .check { display: flex; }
+
+  .check svg { width: 11px; height: 11px; }
+
+  .passage-card .tag {
+    font-size: 0.7rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    margin-bottom: 0.5rem;
+  }
+
+  .passage-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .passage-card p {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    letter-spacing: 0.01em;
+  }
+
+  .btn:hover { background: #a93226; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover { background: var(--paper-warm); color: var(--ink); }
+
+  /* === READING === */
+  .reading-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .passage-meta { flex: 1; }
+  .passage-meta .label {
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    margin-bottom: 0.25rem;
+  }
+
+  .passage-meta h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+  }
+
+  .timer-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 2rem;
+    font-weight: 400;
+    color: var(--accent);
+    min-width: 90px;
+    text-align: right;
+  }
+
+  .passage-text {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem 2.5rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    line-height: 1.9;
+    color: var(--ink);
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+
+  .passage-text.blur-mode {
+    filter: blur(5px);
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .blur-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(250,249,246,0.6);
+    border-radius: var(--radius);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.2s;
+    z-index: 10;
+  }
+
+  .passage-wrapper {
+    position: relative;
+  }
+
+  .reading-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .word-count-note {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* === QUIZ === */
+  .quiz-intro {
+    font-size: 1rem;
+    color: var(--ink-soft);
+    margin-bottom: 2rem;
+    padding: 1rem 1.25rem;
+    background: var(--paper-warm);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--accent);
+  }
+
+  .question-block {
+    margin-bottom: 1.75rem;
+  }
+
+  .question-block p {
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    font-size: 0.97rem;
+    line-height: 1.6;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .option-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    background: var(--paper-card);
+    transition: border-color 0.12s, background 0.12s;
+  }
+
+  .option-label:hover { border-color: var(--accent); background: #fff8f7; }
+
+  .option-label input { margin-top: 2px; accent-color: var(--accent); }
+
+  /* === RESULTS === */
+  .result-hero {
+    text-align: center;
+    padding: 2.5rem 0 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+
+  .result-wpm {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(4rem, 12vw, 7rem);
+    line-height: 1;
+    color: var(--accent);
+    letter-spacing: -0.04em;
+  }
+
+  .result-wpm-label {
+    font-size: 0.85rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    margin-top: 0.5rem;
+  }
+
+  .result-verdict {
+    margin-top: 1rem;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    text-align: center;
+  }
+
+  .stat-card .val {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: var(--ink);
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-card .lbl {
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+  }
+
+  .comprehension-answers {
+    margin-bottom: 2rem;
+  }
+
+  .comprehension-answers h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .answer-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .answer-row.correct { background: #edf7ed; border-left: 3px solid #2e7d32; }
+  .answer-row.wrong { background: #fdecea; border-left: 3px solid var(--accent); }
+
+  .answer-row .icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+  .answer-row .q { color: var(--ink-soft); font-size: 0.82rem; margin-bottom: 0.15rem; }
+  .answer-row .a { font-weight: 500; }
+  .answer-row .correct-a { color: #2e7d32; font-size: 0.82rem; }
+
+  .speed-bar-section { margin-bottom: 2rem; }
+
+  .speed-bar-section h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.82rem;
+  }
+
+  .bar-label { width: 110px; color: var(--ink-soft); flex-shrink: 0; }
+
+  .bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--paper-warm);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--border-color, #ccc);
+    transition: width 0.8s cubic-bezier(.17,.67,.35,1);
+  }
+
+  .bar-you { background: var(--accent) !important; }
+
+  .result-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .history-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .history-section h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink-soft);
+  }
+
+  .history-item .h-wpm {
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    color: var(--ink);
+    min-width: 70px;
+  }
+
+  .history-item .h-date { margin-left: auto; color: var(--ink-faint); }
+
+  @media (max-width: 580px) {
+    main { padding: 2rem 1rem; }
+    .passage-text { padding: 1.25rem; font-size: 1rem; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .stats-row .stat-card:last-child { grid-column: span 2; }
+    .timer-display { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ReadSpeed</h1>
+  <span>Reading Speed Tester</span>
+</header>
+
+<main>
+
+  <!-- INTRO SCREEN -->
+  <div class="screen active" id="screen-intro">
+    <p class="intro-headline">How fast<br>do you read?</p>
+    <p class="intro-sub">Choose a passage, read at your natural pace, then answer a few comprehension questions. We'll calculate your reading speed and accuracy.</p>
+
+    <div class="passage-grid" id="passage-grid"></div>
+
+    <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+      <button class="btn" id="btn-start" disabled>Start reading →</button>
+      <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; color:var(--ink-soft); cursor:pointer;">
+        <input type="checkbox" id="toggle-blur" style="accent-color:var(--accent);">
+        Hide text until ready
+      </label>
+    </div>
+  </div>
+
+  <!-- READING SCREEN -->
+  <div class="screen" id="screen-reading">
+    <div class="reading-header">
+      <div class="passage-meta">
+        <div class="label">Now reading</div>
+        <h2 id="reading-title"></h2>
+      </div>
+      <div class="timer-display" id="timer">0:00</div>
+    </div>
+
+    <div class="passage-wrapper">
+      <div class="passage-text" id="passage-text"></div>
+      <div class="blur-overlay" id="blur-overlay" onclick="revealText()">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Click to reveal & start timer</span>
+      </div>
+    </div>
+
+    <div class="reading-actions">
+      <button class="btn" id="btn-done">I'm done reading</button>
+      <button class="btn btn-ghost" onclick="goTo('intro')">← Back</button>
+      <span class="word-count-note" id="word-count-note"></span>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div class="screen" id="screen-quiz">
+    <div class="quiz-intro">
+      ✓ Timer stopped. Now answer these comprehension questions — no peeking back!
+    </div>
+    <div id="quiz-questions"></div>
+    <button class="btn" id="btn-submit-quiz">See my results →</button>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div class="screen" id="screen-results">
+    <div class="result-hero">
+      <div class="result-wpm" id="res-wpm">—</div>
+      <div class="result-wpm-label">words per minute</div>
+      <div class="result-verdict" id="res-verdict"></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="val" id="res-time">—</div>
+        <div class="lbl">Time taken</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" id="res-words">—</div>
+        <div class="lbl">Words read</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" id="res-comp">—</div>
+        <div class="lbl">Comprehension</div>
+      </div>
+    </div>
+
+    <div class="speed-bar-section">
+      <h3>How you compare</h3>
+      <div id="speed-bars"></div>
+    </div>
+
+    <div class="comprehension-answers" id="comp-answers"></div>
+
+    <div class="result-actions">
+      <button class="btn" onclick="goTo('intro')">Test again</button>
+      <button class="btn btn-ghost" onclick="retakeQuiz()">Retake quiz</button>
+    </div>
+
+    <div class="history-section" id="history-section" style="display:none;">
+      <h3>Your previous results</h3>
+      <div class="history-list" id="history-list"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const PASSAGES = [
+  {
+    id: 'cosmos',
+    tag: 'Science',
+    title: 'The Scale of the Universe',
+    words: null,
+    text: `The universe is incomprehensibly vast. If you were to shrink the Sun to the size of a white blood cell, the Milky Way galaxy would be roughly the size of the continental United States. And the Milky Way is just one of an estimated two trillion galaxies in the observable universe. Light, the fastest thing known to physics, travels about 9.46 trillion kilometers in a single year. The nearest star to our Sun, Proxima Centauri, sits 4.24 light-years away — meaning the light you would see from it tonight left its surface over four years ago. When astronomers observe distant galaxies billions of light-years away, they are not seeing those galaxies as they are today, but as they existed billions of years in the past. In a very real sense, every telescope is also a time machine. The cosmic microwave background radiation, the faint afterglow of the Big Bang, gives us a snapshot of the universe as it was roughly 380,000 years after its birth — a moment when it had cooled enough for atoms to form for the first time. What lies beyond the observable universe remains one of the most profound open questions in all of science. Some cosmologists believe our universe is just one bubble in an infinite, frothing sea of universes, each with its own physical constants and laws. Whether we will ever know remains deeply uncertain.`,
+    questions: [
+      { q: 'How far is Proxima Centauri from our Sun?', options: ['1.5 light-years', '4.24 light-years', '9.46 light-years', '380,000 light-years'], answer: 1 },
+      { q: 'What does the cosmic microwave background radiation represent?', options: ['The light from distant galaxies', 'The boundary of the observable universe', 'The afterglow of the Big Bang', 'Radiation from Proxima Centauri'], answer: 2 },
+      { q: 'Why is a telescope also described as a time machine?', options: ['It can predict future star positions', 'Observing distant objects shows how they looked in the past', 'It speeds up light particles', 'It measures cosmic background radiation in real time'], answer: 1 },
+      { q: 'Approximately how many galaxies are in the observable universe?', options: ['Two billion', 'Two hundred billion', 'Two trillion', 'Two million'], answer: 2 },
+    ]
+  },
+  {
+    id: 'bread',
+    tag: 'History',
+    title: 'A Short History of Bread',
+    words: null,
+    text: `Bread is one of humanity's oldest foods, with evidence of flatbread production dating back at least 14,000 years to hunter-gatherer societies in what is now Jordan. Long before agriculture was established, early humans were grinding wild grains into paste and baking them on hot stones. The development of leavened bread — bread that rises because of fermentation — is thought to have occurred in ancient Egypt around 3000 BCE, possibly by accident when wild yeast contaminated a batch of dough. This discovery transformed bread from a dense flatcake into something lighter and more complex in flavour. For centuries, the quality and availability of bread was deeply tied to social class. White bread, made from finely sifted flour, was a luxury of the wealthy, while the poor ate coarser, darker loaves made from rye or barley. The Industrial Revolution mechanised bread production, making white bread broadly affordable for the first time, though nutritionists would later point out that the milling process stripped away much of the grain's nutritional value. Today, artisan bread-making has seen a remarkable revival. Sourdough, which relies on a live culture of wild yeast and bacteria rather than commercial yeast, has become particularly fashionable — partly for its flavour, partly for its perceived health benefits, and partly because the slow, hands-on process appeals to people seeking a counterpoint to the speed of modern life.`,
+    questions: [
+      { q: 'Where is the earliest evidence of flatbread production found?', options: ['Ancient Egypt', 'Modern-day Jordan', 'Mesopotamia', 'The Indus Valley'], answer: 1 },
+      { q: 'How did leavened bread most likely come about?', options: ['A deliberate experiment by Egyptian bakers', 'Accidental wild yeast contamination', 'A written recipe from a pharaoh', 'Trade with Mesopotamian cultures'], answer: 1 },
+      { q: 'What was the social significance of white bread before the Industrial Revolution?', options: ['It was cheaper and more available', 'It was eaten only by soldiers', 'It was a luxury of the wealthy', 'It was banned in certain regions'], answer: 2 },
+      { q: 'What does sourdough bread use instead of commercial yeast?', options: ['Baking soda and vinegar', 'A live culture of wild yeast and bacteria', 'Eggs and butter', 'Chemical leavening agents'], answer: 1 },
+    ]
+  },
+  {
+    id: 'ocean',
+    tag: 'Nature',
+    title: 'The Deep Ocean',
+    words: null,
+    text: `More than 80 percent of the world's oceans remain unexplored and unmapped. The deep sea — generally defined as water below 200 metres — covers more than half of the Earth's surface, yet we know less about it than we do about the surface of the Moon. The pressures at extreme depths are crushing: at the bottom of the Mariana Trench, the deepest known point on Earth at nearly 11,000 metres, the pressure is over 1,000 times that of the atmosphere at sea level. Despite these hostile conditions, life thrives. Hydrothermal vents on the ocean floor host entire ecosystems that run not on sunlight and photosynthesis, but on chemosynthesis — microbes that extract energy from chemical reactions involving hydrogen sulphide and other compounds seeping from the Earth's interior. Many deep-sea creatures have evolved startling adaptations: the anglerfish dangles a bioluminescent lure to attract prey in the permanent darkness; the barreleye fish has transparent fluid-filled domes over its eyes to maximise the detection of faint light; the tardigrade, sometimes called the water bear, can survive pressures six times greater than those at the deepest ocean trenches. Scientists believe the deep ocean may hold answers to fundamental questions about the origins of life on Earth — and perhaps clues about where life might exist elsewhere in the solar system, such as in the subsurface oceans thought to lie beneath the icy shells of Jupiter's moon Europa and Saturn's moon Enceladus.`,
+    questions: [
+      { q: "What percentage of the world's oceans remains unexplored?", options: ['More than 60%', 'More than 70%', 'More than 80%', 'More than 90%'], answer: 2 },
+      { q: 'What is chemosynthesis?', options: ['Energy derived from sunlight', 'Energy extracted from chemical reactions rather than sunlight', 'A process used by anglerfish to attract prey', 'The study of ocean floor geology'], answer: 1 },
+      { q: 'What is the tardigrade also known as?', options: ['The lantern fish', 'The barrel eye', 'The water bear', 'The vent worm'], answer: 2 },
+      { q: 'Which moons are mentioned as potentially having subsurface oceans?', options: ['Titan and Ganymede', 'Europa and Enceladus', 'Io and Triton', 'Callisto and Dione'], answer: 1 },
+    ]
+  },
+  {
+    id: 'sleep',
+    tag: 'Psychology',
+    title: 'The Science of Sleep',
+    words: null,
+    text: `Sleep is not, as it might appear from the outside, simply a period of rest and unconsciousness. The sleeping brain is extraordinarily active. During a typical night, we cycle through several distinct stages: light sleep, deep sleep, and REM — rapid eye movement sleep — the stage most associated with vivid dreaming. Each cycle lasts roughly 90 minutes, and a full night of sleep contains four to six complete cycles. Deep sleep, also called slow-wave sleep, is thought to be primarily restorative for the body: growth hormone is released, muscle tissue repairs, and the immune system is strengthened. REM sleep, on the other hand, appears to be crucial for emotional processing and memory consolidation. During REM, the brain replays experiences from the day, strengthening neural pathways associated with new skills and integrating emotional memories in a way that can reduce their intensity. Chronic sleep deprivation has serious consequences. Studies have shown that adults who consistently sleep fewer than seven hours a night face higher risks of obesity, type 2 diabetes, cardiovascular disease, and depression. Cognitive performance suffers too: after 17 to 19 hours without sleep, performance on certain tasks is equivalent to a blood alcohol level of 0.05 percent. Perhaps most unsettling of all is the discovery that during sleep, the brain's glymphatic system — a kind of waste disposal network — becomes highly active, clearing toxic proteins including those associated with Alzheimer's disease. Sleep, it turns out, is not a luxury. It is maintenance.`,
+    questions: [
+      { q: 'How long does each sleep cycle typically last?', options: ['45 minutes', '60 minutes', '90 minutes', '120 minutes'], answer: 2 },
+      { q: "What happens to the brain's glymphatic system during sleep?", options: ['It shuts down to conserve energy', 'It becomes highly active and clears toxic proteins', 'It produces growth hormone', 'It replays emotional memories'], answer: 1 },
+      { q: 'After how many hours without sleep does performance equal 0.05% blood alcohol?', options: ['12 to 14 hours', '17 to 19 hours', '24 hours', '36 hours'], answer: 1 },
+      { q: 'What is deep sleep primarily associated with?', options: ['Vivid dreaming', 'Memory consolidation', 'Emotional processing', 'Physical restoration'], answer: 3 },
+    ]
+  },
+];
+
+// Count words in each passage
+PASSAGES.forEach(p => {
+  p.words = p.text.trim().split(/\s+/).length;
+});
+
+const BENCHMARKS = [
+  { label: 'Average adult', wpm: 238, color: '#b5d4f4' },
+  { label: 'College student', wpm: 300, color: '#85b7eb' },
+  { label: 'Speed reader', wpm: 600, color: '#378add' },
+];
+
+let state = {
+  selectedPassage: null,
+  startTime: null,
+  elapsedSeconds: 0,
+  timerInterval: null,
+  blurEnabled: false,
+  timerRunning: false,
+  quizAnswers: {},
+  history: [],
+};
+
+// Load history from localStorage
+try {
+  const saved = localStorage.getItem('readspeed_history');
+  if (saved) state.history = JSON.parse(saved);
+} catch(e) {}
+
+// Build passage grid
+const grid = document.getElementById('passage-grid');
+PASSAGES.forEach(p => {
+  const card = document.createElement('div');
+  card.className = 'passage-card';
+  card.dataset.id = p.id;
+  card.innerHTML = `
+    <div class="check"><svg viewBox="0 0 12 10" fill="none" stroke="white" stroke-width="2"><polyline points="1,5 4.5,9 11,1"/></svg></div>
+    <div class="tag">${p.tag} · ${p.words} words</div>
+    <h3>${p.title}</h3>
+    <p>${p.text.substring(0, 80)}…</p>
+  `;
+  card.addEventListener('click', () => selectPassage(p.id));
+  grid.appendChild(card);
+});
+
+function selectPassage(id) {
+  document.querySelectorAll('.passage-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`.passage-card[data-id="${id}"]`).classList.add('selected');
+  state.selectedPassage = PASSAGES.find(p => p.id === id);
+  document.getElementById('btn-start').disabled = false;
+}
+
+document.getElementById('btn-start').addEventListener('click', () => {
+  if (!state.selectedPassage) return;
+  state.blurEnabled = document.getElementById('toggle-blur').checked;
+  startReading();
+});
+
+function startReading() {
+  const p = state.selectedPassage;
+  document.getElementById('reading-title').textContent = p.title;
+  document.getElementById('passage-text').textContent = p.text;
+  document.getElementById('word-count-note').textContent = `${p.words} words`;
+
+  state.elapsedSeconds = 0;
+  state.timerRunning = false;
+  updateTimerDisplay(0);
+
+  const textEl = document.getElementById('passage-text');
+  const overlay = document.getElementById('blur-overlay');
+
+  if (state.blurEnabled) {
+    textEl.classList.add('blur-mode');
+    overlay.style.display = 'flex';
+  } else {
+    textEl.classList.remove('blur-mode');
+    overlay.style.display = 'none';
+    startTimer();
+  }
+
+  goTo('reading');
+}
+
+function revealText() {
+  const textEl = document.getElementById('passage-text');
+  const overlay = document.getElementById('blur-overlay');
+  textEl.classList.remove('blur-mode');
+  overlay.style.display = 'none';
+  startTimer();
+}
+
+function startTimer() {
+  state.startTime = Date.now();
+  state.timerRunning = true;
+  clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(() => {
+    state.elapsedSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+    updateTimerDisplay(state.elapsedSeconds);
+  }, 200);
+}
+
+function updateTimerDisplay(secs) {
+  const m = Math.floor(secs / 60);
+  const s = String(secs % 60).padStart(2, '0');
+  document.getElementById('timer').textContent = `${m}:${s}`;
+}
+
+document.getElementById('btn-done').addEventListener('click', () => {
+  if (!state.timerRunning) return;
+  clearInterval(state.timerInterval);
+  state.timerRunning = false;
+  buildQuiz();
+  goTo('quiz');
+});
+
+function buildQuiz() {
+  state.quizAnswers = {};
+  const container = document.getElementById('quiz-questions');
+  container.innerHTML = '';
+  state.selectedPassage.questions.forEach((q, qi) => {
+    const block = document.createElement('div');
+    block.className = 'question-block';
+    block.innerHTML = `<p>${qi + 1}. ${q.q}</p><div class="options">${
+      q.options.map((opt, oi) => `
+        <label class="option-label">
+          <input type="radio" name="q${qi}" value="${oi}">
+          ${opt}
+        </label>
+      `).join('')
+    }</div>`;
+    container.appendChild(block);
+  });
+}
+
+document.getElementById('btn-submit-quiz').addEventListener('click', () => {
+  const p = state.selectedPassage;
+  let answered = 0;
+  p.questions.forEach((q, qi) => {
+    const sel = document.querySelector(`input[name="q${qi}"]:checked`);
+    if (sel) {
+      state.quizAnswers[qi] = parseInt(sel.value);
+      answered++;
+    }
+  });
+  if (answered < p.questions.length) {
+    if (!confirm("You haven't answered all questions. Submit anyway?")) return;
+  }
+  showResults();
+});
+
+function showResults() {
+  const p = state.selectedPassage;
+  const secs = state.elapsedSeconds;
+  const wpm = Math.round((p.words / secs) * 60);
+  const correct = p.questions.filter((q, qi) => state.quizAnswers[qi] === q.answer).length;
+  const compPct = Math.round((correct / p.questions.length) * 100);
+
+  // Save to history
+  const entry = {
+    title: p.title,
+    wpm,
+    comp: compPct,
+    date: new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short' })
+  };
+  state.history.unshift(entry);
+  if (state.history.length > 10) state.history.pop();
+  try { localStorage.setItem('readspeed_history', JSON.stringify(state.history)); } catch(e) {}
+
+  // WPM
+  document.getElementById('res-wpm').textContent = wpm;
+  const mins = Math.floor(secs / 60), ssecs = secs % 60;
+  document.getElementById('res-time').textContent = mins > 0 ? `${mins}m ${ssecs}s` : `${ssecs}s`;
+  document.getElementById('res-words').textContent = p.words;
+  document.getElementById('res-comp').textContent = compPct + '%';
+
+  // Verdict
+  let verdict = '';
+  if (wpm < 150) verdict = "You read below average speed. Practise reading wider phrases at a time.";
+  else if (wpm < 250) verdict = "You're in the average range. Most adults read 200-250 wpm.";
+  else if (wpm < 400) verdict = "Nice - you're reading faster than most adults.";
+  else if (wpm < 600) verdict = "You're in speed reader territory. Impressive pace!";
+  else verdict = "Exceptional speed - are you sure you weren't skimming? Check your comprehension score.";
+  document.getElementById('res-verdict').textContent = verdict;
+
+  // Speed bars
+  const allBars = [...BENCHMARKS, { label: 'You', wpm, color: null, isYou: true }]
+    .sort((a, b) => a.wpm - b.wpm);
+  const maxWpm = Math.max(...allBars.map(b => b.wpm), wpm) * 1.1;
+  document.getElementById('speed-bars').innerHTML = allBars.map(b => `
+    <div class="bar-row">
+      <div class="bar-label">${b.label}</div>
+      <div class="bar-track">
+        <div class="bar-fill ${b.isYou ? 'bar-you' : ''}" style="width:${Math.round((b.wpm/maxWpm)*100)}%; background:${b.color || ''}"></div>
+      </div>
+      <span style="font-family:'DM Mono',monospace;font-size:0.78rem;min-width:42px;text-align:right;">${b.wpm}</span>
+    </div>
+  `).join('');
+
+  // Comprehension answers
+  const compEl = document.getElementById('comp-answers');
+  compEl.innerHTML = `<h3>Comprehension review</h3>` + p.questions.map((q, qi) => {
+    const userAns = state.quizAnswers[qi];
+    const isCorrect = userAns === q.answer;
+    return `<div class="answer-row ${isCorrect ? 'correct' : 'wrong'}">
+      <span class="icon">${isCorrect ? '✓' : '✗'}</span>
+      <div>
+        <div class="q">${q.q}</div>
+        <div class="a">You: ${userAns !== undefined ? q.options[userAns] : '(skipped)'}</div>
+        ${!isCorrect ? `<div class="correct-a">Correct: ${q.options[q.answer]}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // History
+  if (state.history.length > 1) {
+    document.getElementById('history-section').style.display = 'block';
+    document.getElementById('history-list').innerHTML = state.history.map(h => `
+      <div class="history-item">
+        <span class="h-wpm">${h.wpm} wpm</span>
+        <span>${h.title}</span>
+        <span>${h.comp}% comprehension</span>
+        <span class="h-date">${h.date}</span>
+      </div>
+    `).join('');
+  }
+
+  goTo('results');
+}
+
+function retakeQuiz() {
+  buildQuiz();
+  goTo('quiz');
+}
+
+function goTo(screenName) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${screenName}`).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
